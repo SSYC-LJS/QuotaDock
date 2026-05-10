@@ -32,7 +32,8 @@ const DEEPSEEK_PLATFORM_URL = 'https://platform.deepseek.com';
 const DEEPSEEK_USAGE_URL = `${DEEPSEEK_PLATFORM_URL}/usage`;
 const DEEPSEEK_SESSION_PARTITION = 'persist:deepseek-platform';
 const REFRESH_INTERVAL_MS = 5 * 60 * 1000;
-const COMPACT_BOUNDS = { width: 270, height: 84 };
+const COMPACT_BOUNDS = { width: 236, height: 70 };
+const COMPACT_HOVER_BOUNDS = { width: 336, height: 112 };
 const EXPANDED_BOUNDS = { width: 390, height: 430 };
 const EDGE_GAP = 10;
 const execFileAsync = promisify(execFile);
@@ -69,7 +70,7 @@ function createWindow(): void {
     frame: false,
     resizable: false,
     alwaysOnTop: true,
-    skipTaskbar: false,
+    skipTaskbar: true,
     show: false,
     backgroundColor: '#eef3f8',
     title: 'QuotaDock',
@@ -167,18 +168,51 @@ function createTray(): void {
   updateTrayMenu();
 }
 
+function boundsForLayout(mode: WidgetLayoutMode): { width: number; height: number } {
+  if (mode === 'expanded') return EXPANDED_BOUNDS;
+  if (mode === 'compact-hover') return COMPACT_HOVER_BOUNDS;
+  return COMPACT_BOUNDS;
+}
+
+function clamp(value: number, min: number, max: number): number {
+  if (max < min) return min;
+  return Math.min(Math.max(value, min), max);
+}
+
 function setWidgetLayout(mode: WidgetLayoutMode): void {
   if (!mainWindow) return;
 
+  const previousBounds = mainWindow.getBounds();
   currentLayout = mode;
-  const bounds = mode === 'expanded' ? EXPANDED_BOUNDS : COMPACT_BOUNDS;
+  const nextBounds = boundsForLayout(mode);
   mainWindow.setResizable(mode === 'expanded');
-  mainWindow.setMinimumSize(bounds.width, bounds.height);
-  mainWindow.setSize(bounds.width, bounds.height, true);
+  mainWindow.setMinimumSize(nextBounds.width, nextBounds.height);
+  mainWindow.setSize(nextBounds.width, nextBounds.height, false);
 
-  if (mode === 'compact') {
-    snapWindowToNearestHorizontalEdge();
+  if (mode === 'expanded') {
+    placeExpandedWindow(previousBounds);
+    return;
   }
+
+  snapWindowToNearestHorizontalEdge();
+}
+
+function placeExpandedWindow(previousBounds: Electron.Rectangle): void {
+  if (!mainWindow) return;
+
+  const display = screen.getDisplayMatching(previousBounds);
+  const area = display.workArea;
+  const previousCenterX = previousBounds.x + previousBounds.width / 2;
+  const areaCenterX = area.x + area.width / 2;
+  const shouldOpenRight = previousCenterX < areaCenterX;
+  const x = shouldOpenRight ? area.x + EDGE_GAP : area.x + area.width - EXPANDED_BOUNDS.width - EDGE_GAP;
+  const y = clamp(
+    previousBounds.y,
+    area.y + EDGE_GAP,
+    area.y + area.height - EXPANDED_BOUNDS.height - EDGE_GAP
+  );
+
+  mainWindow.setPosition(Math.round(x), Math.round(y), true);
 }
 
 function snapWindowToNearestHorizontalEdge(): void {
@@ -190,7 +224,7 @@ function snapWindowToNearestHorizontalEdge(): void {
   const centerX = bounds.x + bounds.width / 2;
   const areaCenterX = area.x + area.width / 2;
   const x = centerX < areaCenterX ? area.x + EDGE_GAP : area.x + area.width - bounds.width - EDGE_GAP;
-  const y = Math.min(Math.max(bounds.y, area.y + EDGE_GAP), area.y + area.height - bounds.height - EDGE_GAP);
+  const y = clamp(bounds.y, area.y + EDGE_GAP, area.y + area.height - bounds.height - EDGE_GAP);
   mainWindow.setPosition(Math.round(x), Math.round(y), true);
 }
 
@@ -458,16 +492,16 @@ function usageDiscoveryScript(): string {
       function numeric(value) {
         if (typeof value === 'number' && Number.isFinite(value)) return value;
         if (typeof value === 'string') {
-          const parsed = Number(value.replace(/[¥￥,$,\\s]/g, ''));
+          const parsed = Number(value.replace(/[¥￥,$\\s]/g, ''));
           if (Number.isFinite(parsed)) return parsed;
         }
         return null;
       }
 
-      function collectAmounts(value, parentKey = '') {
+      function collectAmounts(value) {
         const amounts = [];
         if (Array.isArray(value)) {
-          for (const item of value) amounts.push(...collectAmounts(item, parentKey));
+          for (const item of value) amounts.push(...collectAmounts(item));
           return amounts;
         }
         if (!value || typeof value !== 'object') return amounts;
@@ -478,7 +512,7 @@ function usageDiscoveryScript(): string {
             const amount = numeric(child);
             if (amount !== null && amount >= 0 && amount < 100000000) amounts.push(amount);
           }
-          amounts.push(...collectAmounts(child, key));
+          amounts.push(...collectAmounts(child));
         }
         return amounts;
       }
@@ -544,7 +578,7 @@ function usageDiscoveryScript(): string {
       }
 
       const text = document.body?.innerText || '';
-      const matches = [...text.matchAll(/(?:¥|￥)\\s*([0-9]+(?:\\.[0-9]+)?)/g)].map((match) => Number(match[1]));
+      const matches = [...text.matchAll(/[¥￥]\\s*([0-9]+(?:\\.[0-9]+)?)/g)].map((match) => Number(match[1]));
       const amount = matches.filter(Number.isFinite).sort((a, b) => b - a)[0];
       return Number.isFinite(amount) ? { amount, currency: 'CNY', monthsScanned: 1, source: 'usage-page-dom' } : null;
     })();

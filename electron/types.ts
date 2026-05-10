@@ -99,4 +99,4 @@ export type CodexQuotaResult =
       code: 'script-not-found' | 'script-error' | 'invalid-response';
     };
 
-export type WidgetLayoutMode = 'compact' | 'expanded';
+export type WidgetLayoutMode = 'compact' | 'compact-hover' | 'expanded';

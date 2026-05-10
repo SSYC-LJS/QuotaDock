@@ -6,7 +6,8 @@ import type {
   DeepSeekPlatformSessionResult,
   DeepSeekPlatformUsageResult,
   SetApiKeyResult,
-  StoredKeyStatus
+  StoredKeyStatus,
+  WidgetLayoutMode
 } from './types';
 
 contextBridge.exposeInMainWorld('deepseek', {
@@ -21,10 +22,10 @@ contextBridge.exposeInMainWorld('deepseek', {
   getPlatformUsageTotal: (): Promise<DeepSeekPlatformUsageResult> =>
     ipcRenderer.invoke('deepseek:getPlatformUsageTotal'),
   getCodexQuota: (): Promise<CodexQuotaResult> => ipcRenderer.invoke('codex:getQuota'),
-  setWidgetLayout: (mode: 'compact' | 'expanded'): Promise<void> => ipcRenderer.invoke('window:setLayout', mode),
+  setWidgetLayout: (mode: WidgetLayoutMode): Promise<void> => ipcRenderer.invoke('window:setLayout', mode),
   hideWindow: (): Promise<void> => ipcRenderer.invoke('window:hide'),
-  onLayoutChanged: (callback: (mode: 'compact' | 'expanded') => void): (() => void) => {
-    const listener = (_event: Electron.IpcRendererEvent, mode: 'compact' | 'expanded'): void => callback(mode);
+  onLayoutChanged: (callback: (mode: WidgetLayoutMode) => void): (() => void) => {
+    const listener = (_event: Electron.IpcRendererEvent, mode: WidgetLayoutMode): void => callback(mode);
     ipcRenderer.on('window:layoutChanged', listener);
     return () => ipcRenderer.removeListener('window:layoutChanged', listener);
   },

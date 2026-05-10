@@ -30,7 +30,6 @@ const platformLoggedIn = ref(false);
 const viewMode = ref<ViewMode>('dashboard');
 const providerMode = ref<ProviderMode>('deepseek');
 const codexQuota = ref<CodexQuotaSnapshot | null>(null);
-const codexFetchedAt = ref('');
 const isCodexLoading = ref(false);
 const codexError = ref('');
 
@@ -122,13 +121,6 @@ function formatMoney(value: string | number, currency = 'CNY'): string {
   }).format(amount);
 }
 
-function formatCompact(value: number): string {
-  return new Intl.NumberFormat('zh-CN', {
-    notation: 'compact',
-    maximumFractionDigits: 1
-  }).format(value);
-}
-
 function formatPercent(value: number | null): string {
   return value === null ? '--' : `${value}%`;
 }
@@ -155,13 +147,18 @@ function parseLocalResetTime(value: string | null | undefined): Date | null {
   return Number.isFinite(parsed.getTime()) ? parsed : null;
 }
 
-async function setExpanded(nextValue: boolean): Promise<void> {
-  isExpanded.value = nextValue;
-  await window.deepseek.setWidgetLayout(nextValue ? 'expanded' : 'compact');
+async function expandWidget(): Promise<void> {
+  if (isExpanded.value) return;
+  isExpanded.value = true;
+  await window.deepseek.setWidgetLayout('expanded');
 }
 
-async function expandWidget(): Promise<void> {
-  if (!isExpanded.value) await setExpanded(true);
+async function enterCompactHover(): Promise<void> {
+  if (!isExpanded.value) await window.deepseek.setWidgetLayout('compact-hover');
+}
+
+async function leaveCompactHover(): Promise<void> {
+  if (!isExpanded.value) await window.deepseek.setWidgetLayout('compact');
 }
 
 async function loadKeyStatus(): Promise<void> {
@@ -280,7 +277,6 @@ function switchProvider(mode: ProviderMode): void {
 function applyCodexQuotaResult(result: CodexQuotaResult): void {
   if (result.ok) {
     codexQuota.value = result.data;
-    codexFetchedAt.value = result.fetchedAt;
     codexError.value = '';
     return;
   }
@@ -325,21 +321,18 @@ onUnmounted(() => {
     <section
       v-if="!isExpanded"
       class="compact-card"
-      role="button"
-      tabindex="0"
-      @click="expandWidget"
-      @keydown.enter="expandWidget"
+      @mouseenter="enterCompactHover"
+      @mouseleave="leaveCompactHover"
     >
-      <div class="compact-main">
-        <div>
-          <span>{{ compactTitle }}</span>
-          <strong>{{ compactPrimary }}</strong>
-        </div>
-        <div class="status-dot" :class="statusTone"></div>
+      <div class="compact-copy">
+        <span>{{ compactTitle }}</span>
+        <strong>{{ compactPrimary }}</strong>
+        <em>{{ compactSecondary }}</em>
       </div>
-      <div class="compact-hover">
-        <span>{{ compactSecondary }}</span>
-      </div>
+      <button class="compact-expand-button" type="button" aria-label="展开 QuotaDock" @click="expandWidget">
+        <span></span>
+      </button>
+      <div class="status-dot" :class="statusTone"></div>
     </section>
 
     <template v-else>

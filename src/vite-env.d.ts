@@ -7,7 +7,8 @@ import type {
   DeepSeekPlatformSessionResult,
   DeepSeekPlatformUsageResult,
   SetApiKeyResult,
-  StoredKeyStatus
+  StoredKeyStatus,
+  WidgetLayoutMode
 } from '../electron/types';
 
 declare global {
@@ -22,9 +23,9 @@ declare global {
       getPlatformSessionStatus: () => Promise<DeepSeekPlatformSessionResult>;
       getPlatformUsageTotal: () => Promise<DeepSeekPlatformUsageResult>;
       getCodexQuota: () => Promise<CodexQuotaResult>;
-      setWidgetLayout: (mode: 'compact' | 'expanded') => Promise<void>;
+      setWidgetLayout: (mode: WidgetLayoutMode) => Promise<void>;
       hideWindow: () => Promise<void>;
-      onLayoutChanged: (callback: (mode: 'compact' | 'expanded') => void) => () => void;
+      onLayoutChanged: (callback: (mode: WidgetLayoutMode) => void) => () => void;
       onRefreshRequested: (callback: () => void) => () => void;
     };
   }
