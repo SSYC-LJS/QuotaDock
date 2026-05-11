@@ -49,20 +49,20 @@ button {
 .widget-shell.compact {
   justify-content: center;
   overflow: hidden;
-  padding: 8px;
+  padding: 6px;
 }
 
 .compact-card {
   position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 34px;
+  grid-template-columns: minmax(0, 1fr) 28px;
   width: 100%;
-  min-height: 54px;
+  min-height: 46px;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   border: 1px solid rgba(15, 23, 42, 0.1);
-  border-radius: 10px;
-  padding: 8px 9px 8px 11px;
+  border-radius: 9px;
+  padding: 6px 7px 6px 9px;
   background: rgba(255, 255, 255, 0.88);
   box-shadow: 0 14px 36px rgba(31, 41, 55, 0.12);
   cursor: default;
@@ -78,14 +78,14 @@ button {
 
 .compact-copy span {
   color: #667085;
-  font-size: 11px;
+  font-size: 10px;
   line-height: 1.2;
 }
 
 .compact-copy strong {
   overflow: hidden;
   color: #101828;
-  font-size: 18px;
+  font-size: 16px;
   font-variant-numeric: tabular-nums;
   font-weight: 820;
   line-height: 1.05;
@@ -122,8 +122,8 @@ button {
 
 .compact-expand-button {
   display: grid;
-  width: 34px;
-  height: 34px;
+  width: 28px;
+  height: 28px;
   place-items: center;
   border-radius: 8px;
   background: #0f172a;
@@ -153,10 +153,10 @@ button {
 
 .status-dot {
   position: absolute;
-  top: 9px;
-  right: 52px;
-  width: 10px;
-  height: 10px;
+  top: 7px;
+  right: 42px;
+  width: 8px;
+  height: 8px;
   border-radius: 999px;
   background: #98a2b3;
 }
