@@ -31,7 +31,7 @@ const DEEPSEEK_BALANCE_URL = 'https://api.deepseek.com/user/balance';
 const DEEPSEEK_PLATFORM_URL = 'https://platform.deepseek.com';
 const DEEPSEEK_USAGE_URL = `${DEEPSEEK_PLATFORM_URL}/usage`;
 const DEEPSEEK_SESSION_PARTITION = 'persist:deepseek-platform';
-const REFRESH_INTERVAL_MS = 5 * 60 * 1000;
+const REFRESH_INTERVAL_MS = 60 * 1000;
 const COMPACT_BOUNDS = { width: 236, height: 70 };
 const COMPACT_HOVER_BOUNDS = { width: 336, height: 112 };
 const EXPANDED_BOUNDS = { width: 390, height: 430 };
@@ -181,6 +181,7 @@ function clamp(value: number, min: number, max: number): number {
 
 function setWidgetLayout(mode: WidgetLayoutMode): void {
   if (!mainWindow) return;
+  if (currentLayout === mode) return;
 
   const previousBounds = mainWindow.getBounds();
   currentLayout = mode;

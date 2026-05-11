@@ -24,6 +24,7 @@ const isLoading = ref(false);
 const isSaving = ref(false);
 const isPlatformLoading = ref(false);
 const isExpanded = ref(false);
+const isCompactHover = ref(false);
 const hasApiKey = ref(false);
 const storageAvailable = ref(true);
 const platformLoggedIn = ref(false);
@@ -35,6 +36,7 @@ const codexError = ref('');
 
 let removeRefreshListener: (() => void) | null = null;
 let removeLayoutListener: (() => void) | null = null;
+let compactLeaveTimer: ReturnType<typeof setTimeout> | null = null;
 
 const firstBalance = computed(() => balance.value?.balance_infos[0] ?? null);
 
@@ -154,11 +156,22 @@ async function expandWidget(): Promise<void> {
 }
 
 async function enterCompactHover(): Promise<void> {
-  if (!isExpanded.value) await window.deepseek.setWidgetLayout('compact-hover');
+  if (compactLeaveTimer) {
+    clearTimeout(compactLeaveTimer);
+    compactLeaveTimer = null;
+  }
+  if (isExpanded.value) return;
+  isCompactHover.value = true;
+  await window.deepseek.setWidgetLayout('compact-hover');
 }
 
-async function leaveCompactHover(): Promise<void> {
-  if (!isExpanded.value) await window.deepseek.setWidgetLayout('compact');
+function leaveCompactHover(): void {
+  if (compactLeaveTimer) clearTimeout(compactLeaveTimer);
+  compactLeaveTimer = setTimeout(() => {
+    if (isExpanded.value) return;
+    isCompactHover.value = false;
+    void window.deepseek.setWidgetLayout('compact');
+  }, 220);
 }
 
 async function loadKeyStatus(): Promise<void> {
@@ -307,10 +320,12 @@ onMounted(async () => {
   });
   removeLayoutListener = window.deepseek.onLayoutChanged((mode) => {
     isExpanded.value = mode === 'expanded';
+    if (mode === 'compact') isCompactHover.value = false;
   });
 });
 
 onUnmounted(() => {
+  if (compactLeaveTimer) clearTimeout(compactLeaveTimer);
   removeRefreshListener?.();
   removeLayoutListener?.();
 });
@@ -321,6 +336,7 @@ onUnmounted(() => {
     <section
       v-if="!isExpanded"
       class="compact-card"
+      :class="{ hovering: isCompactHover }"
       @mouseenter="enterCompactHover"
       @mouseleave="leaveCompactHover"
     >

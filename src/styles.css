@@ -112,7 +112,8 @@ button {
   -webkit-line-clamp: 2;
 }
 
-.compact-card:hover .compact-copy em {
+.compact-card:hover .compact-copy em,
+.compact-card.hovering .compact-copy em {
   max-height: 34px;
   margin-top: 4px;
   opacity: 1;
